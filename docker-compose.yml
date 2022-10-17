@@ -1,0 +1,56 @@
+version: '3'
+
+services:
+  php_fpm:
+    container_name: kruiz_online_php
+    build: .
+    user: www-data
+    env_file:
+      - .env
+    expose:
+      - 9000
+    ports:
+      - "29:20"
+    depends_on:
+      - database
+    volumes:
+      - .:/opt/app
+      - /var/log/kruiz_online/php:/var/log/app
+    networks:
+      - kruiz_online_network
+
+  database:
+    container_name: kruiz_online_db
+    image: mysql:8.0
+    env_file:
+      - .env
+    environment:
+      - "MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}"
+      - "MYSQL_DATABASE=${DB_DATABASE}"
+      - "MYSQL_USER=${DB_USERNAME}"
+      - "MYSQL_PASSWORD=${DB_PASSWORD}"
+    volumes:
+      - /var/data/kruiz_online/db:/var/lib/mysql
+      - /var/data/kruiz_online/db_data:/data
+    ports:
+      - 3320:3306
+    networks:
+      - kruiz_online_network
+
+  nginx:
+    container_name: kruiz_online_nginx
+    image: nginx:1.23.1-alpine
+    ports:
+      - 300:80
+    volumes:
+      - ./:/opt/app
+      - /var/log/kruiz_online/nginx/:/var/log/nginx/
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+    networks:
+      - kruiz_online_network
+    depends_on:
+      - php_fpm
+
+networks:
+  kruiz_online_network:
+    driver: bridge
